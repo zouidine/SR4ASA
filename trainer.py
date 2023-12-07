@@ -10,7 +10,7 @@ def get_acc(preds, y):
     acc = accuracy_score(y, rounded_preds)
     return acc
 
-def train(model, iterator, optimizer, criterion, epoch_no, zeta=0.25):
+def train(model, iterator, optimizer, criterion, device, epoch_no, zeta=0.25):
     epoch_loss = 0
     epoch_acc = 0
     model.train()
