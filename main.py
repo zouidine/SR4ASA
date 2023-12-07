@@ -6,10 +6,6 @@ from trainer import train, evaluate
 import torch
 import pandas as pd
 
-#Loading data
-!git clone https://github.com/elnagara/HARD-Arabic-Dataset
-!unzip 'HARD-Arabic-Dataset/data/balanced-reviews.zip'
-
 SEED = 42
 batch_size = 64
 HIDDEN_DIM = 256
@@ -26,7 +22,7 @@ tokenizer = AutoTokenizer.from_pretrained("UBC-NLP/MARBERT")
 marbert = AutoModel.from_pretrained("UBC-NLP/MARBERT", output_hidden_states=True)
 
 #load HARD dataset
-df_HARD = pd.read_csv("/balanced-reviews.txt", sep="\t", header=0,
+df_HARD = pd.read_csv("data/balanced-reviews.txt", sep="\t", header=0,
                       encoding='utf-16')
 df_HARD = df_HARD[["review","rating"]]
 
@@ -112,11 +108,11 @@ for epoch in range(N_EPOCHS):
     valid_acc = evaluate(model, valid_loader, epoch)
     if valid_acc > best_valid_acc:
         best_valid_acc = valid_acc
-        torch.save(model.state_dict(), 'models/hard_best_model.pt')
+        torch.save(model.state_dict(), 'hard_best_model.pt')
         print("\nbest accurcy is updated to ",100*best_valid_acc,"at", epoch,"\n")
 
 #Evaluate
-model.load_state_dict(torch.load('models/hard_best_model.pt'))
+model.load_state_dict(torch.load('hard_best_model.pt'))
 
 acc = evaluate(model, test_loader)
 print(f'\nAcc: {acc*100:.2f}%')
