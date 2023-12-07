@@ -104,8 +104,8 @@ criterion = criterion.to(device)
 #Training
 best_valid_acc = 0
 for epoch in range(N_EPOCHS):
-    train(model, train_loader, optimizer, criterion, epoch, zeta=zeta)
-    valid_acc = evaluate(model, valid_loader, epoch)
+    train(model, train_loader, optimizer, criterion, device, epoch, zeta=zeta)
+    valid_acc = evaluate(model, valid_loader, device, epoch)
     if valid_acc > best_valid_acc:
         best_valid_acc = valid_acc
         torch.save(model.state_dict(), 'hard_best_model.pt')
@@ -114,5 +114,5 @@ for epoch in range(N_EPOCHS):
 #Evaluate
 model.load_state_dict(torch.load('hard_best_model.pt'))
 
-acc = evaluate(model, test_loader)
+acc = evaluate(model, test_loader, device)
 print(f'\nAcc: {acc*100:.2f}%')
