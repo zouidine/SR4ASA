@@ -50,7 +50,7 @@ def train(model, iterator, optimizer, criterion, device, epoch_no, zeta=0.25):
                         refresh=True,
                     )
 
-def evaluate(model, iterator, epoch_no=None):
+def evaluate(model, iterator, device, epoch_no=None):
     epoch_acc = 0
     model.eval()
     with torch.no_grad():
