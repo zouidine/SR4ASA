@@ -4,7 +4,7 @@ from preprocessor import Preprocessor
 from trainer import train, evaluate
 from model import CNN_RNN
 import torch
-import LABR
+from labr import LABR
 
 SEED = 42
 batch_size = 64
@@ -17,7 +17,13 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 zeta = 0.75
 N_EPOCHS = 10
 
+#download the LABR dataset
+#!git clone https://github.com/mohamedadaly/LABR
+
 #load AraBERT large model
+#!pip install transformers
+#!git clone https://github.com/aub-mind/arabert
+#!pip install -r arabert/requirements.txt
 model_name = "aubmindlab/bert-large-arabertv2"
 arabert = AutoModel.from_pretrained(model_name, output_hidden_states = True)
 tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=False)
