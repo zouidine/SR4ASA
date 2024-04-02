@@ -71,7 +71,6 @@ class Preprocessor():
         batch = len(sentences)
         tensor_data = torch.full((batch, max_len), 0, dtype=torch.int64)
         tensor_mask = torch.zeros(batch, max_len, dtype=torch.int64)
-
         for i in range(batch):
             ids = self.tokenizer.convert_tokens_to_ids(sentences[i])
             tensor_data[i, 0:len(ids)] = torch.tensor(ids, dtype=torch.int64)
