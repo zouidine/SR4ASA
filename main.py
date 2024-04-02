@@ -1,10 +1,10 @@
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer, AutoModel
 from preprocessor import Preprocessor
-from model import CNN_RNN
 from trainer import train, evaluate
+from model import CNN_RNN
 import torch
-import pandas as pd
+import LABR
 
 SEED = 42
 batch_size = 64
@@ -17,32 +17,27 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 zeta = 0.75
 N_EPOCHS = 10
 
-#load BERT model from huggingface
-tokenizer = AutoTokenizer.from_pretrained("UBC-NLP/MARBERT")
-marbert = AutoModel.from_pretrained("UBC-NLP/MARBERT", output_hidden_states=True)
+#load AraBERT large model
+model_name = "aubmindlab/bert-large-arabertv2"
+arabert = AutoModel.from_pretrained(model_name, output_hidden_states = True)
+tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=False)
+arabert_prep = ArabertPreprocessor(model_name=model_name)
 
-#load HARD dataset
-df_HARD = pd.read_csv("data/balanced-reviews.txt", sep="\t", header=0,
-                      encoding='utf-16')
-df_HARD = df_HARD[["review","rating"]]
+# main object that will read the train/test sets from files.
+labr = LABR()
 
-# code rating as +ve if > 3, -ve if less, no 3s in dataset
-hard_map = {
-    5: 1,
-    4: 1,
-    2: 0,
-    1: 0
-}
-df_HARD["rating"] = df_HARD["rating"].apply(lambda x: hard_map[x])
+datas = [
+        dict(name="2-balanced", params=dict(klass="2", balanced="balanced")),
+        dict(name="2-unbalanced", params=dict(klass="2", balanced="unbalanced"))
+        ]
 
-d_train, d_test, y_train, y_test = train_test_split(df_HARD["review"],
-                                                    df_HARD["rating"],
-                                                    test_size=0.2,
-                                                    random_state=SEED,
-                                                    stratify=df_HARD["rating"])
-d_train, d_valid, y_train, y_valid = train_test_split(d_train,
-                                                      y_train,
-                                                      test_size=0.2,
+# Load the data
+print(60*"-")
+data = datas[0]
+print("Loading data:", data['name'])
+(d_train, y_train, d_test, y_test) = labr.get_train_test(**data['params'])
+d_train, d_valid, y_train, y_valid = train_test_split(d_train, y_train,
+                                                      test_size=0.1,
                                                       random_state=SEED,
                                                       stratify=y_train)
 
@@ -51,17 +46,17 @@ preprocess = Preprocessor(tokenizer)
 #TRAIN
 d_train = preprocess.clean_and_tokenize(list(d_train))
 train_src, train_mask = preprocess.creat_tensor(d_train)
-train_trg = torch.tensor(list(y_train), dtype=torch.float)
+train_trg = torch.tensor(y_train, dtype=torch.float)
 
 #VALID
 d_valid = preprocess.clean_and_tokenize(list(d_valid))
 valid_src, valid_mask = preprocess.creat_tensor(d_valid)
-valid_trg = torch.tensor(list(y_valid), dtype=torch.float)
+valid_trg = torch.tensor(y_valid, dtype=torch.float)
 
 #TEST
 d_test = preprocess.clean_and_tokenize(list(d_test))
 test_src, test_mask = preprocess.creat_tensor(d_test)
-test_trg = torch.tensor(list(y_test), dtype=torch.float)
+test_trg = torch.tensor(y_test, dtype=torch.float)
 
 print("Train set size:\t", len(d_train))
 print("\t Positif:", sum(y_train))
@@ -104,15 +99,14 @@ criterion = criterion.to(device)
 #Training
 best_valid_acc = 0
 for epoch in range(N_EPOCHS):
-    train(model, train_loader, optimizer, criterion, device, epoch, zeta=zeta)
-    valid_acc = evaluate(model, valid_loader, device, epoch)
+    train(model, train_loader, optimizer, criterion, epoch, device, zeta=zeta)
+    valid_acc, _, _, _ = evaluate(model, valid_loader, device)
     if valid_acc > best_valid_acc:
         best_valid_acc = valid_acc
-        torch.save(model.state_dict(), 'hard_best_model.pt')
+        torch.save(model.state_dict(), 'checkpoints/labr_best_model.pt')
         print("\nbest accurcy is updated to ",100*best_valid_acc,"at", epoch,"\n")
 
 #Evaluate
-model.load_state_dict(torch.load('hard_best_model.pt'))
-
-acc = evaluate(model, test_loader, device)
-print(f'\nAcc: {acc*100:.2f}%')
+model.load_state_dict(torch.load('checkpoints/labr_best_model.pt'))
+acc, pre, rec, f1s = evaluate(model, test_loader, device)
+print(f'\nAcc: {acc*100:.2f}%\nPre: {pre*100:.2f}%\nRec: {rec*100:.2f}%\nF1s: {f1s*100:.2f}%')
