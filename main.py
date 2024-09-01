@@ -93,7 +93,7 @@ test_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
 torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 torch.cuda.manual_seed_all(SEED)
-model = CNN_RNN(arbert, HIDDEN_DIM, N_FILTERS, FLTER_SIZES, DROPOUT, device)
+model = CNN_RNN(arabert, HIDDEN_DIM, N_FILTERS, FLTER_SIZES, DROPOUT, device)
 model = model.to(device)
 
 optimizer = torch.optim.Adam([param for param in model.parameters() if 
